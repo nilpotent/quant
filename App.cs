@@ -1,35 +1,40 @@
-﻿using SkyQuant.Services;
-using System.Diagnostics;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SkyQuant.Models;
+using SkyQuant.Services;
 
-namespace SkyQuant
+namespace SkyQuant;
+
+public class App(IDataReader dataReader, IDataWriter dataWriter, IServiceProvider serviceProvider, IOptions<Settings> options, ILogger<App> logger)
 {
-    public class App(IDataReader dataReader, IDataWriter dataWriter, IOrderBookBuilder orderBookBuilder)
+    private readonly IDataReader _dataReader = dataReader;
+    private readonly IDataWriter _dataWriter = dataWriter;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly Settings _settings = options.Value;
+    private readonly ILogger<App> _logger = logger;
+
+    public void Run()
     {
-        private readonly IDataReader _dataReader = dataReader;
-        private readonly IDataWriter _dataWriter = dataWriter;
-        private readonly IOrderBookBuilder _orderBookBuilder = orderBookBuilder;
+        var ticks = _dataReader.ReadFile(_settings.InputFile);
 
-        public void Run()
+        if (ticks == null)
         {
-            var ticks = _dataReader.ReadFile("ticks.csv");
+            _logger.LogInformation("There is no data");
+            return;
+        }
 
-            if (ticks == null)
-            {
-                ILogger.Log("There is no data");
-                return;
-            }
+        IReadOnlyList<Snapshot>? snapshots = null;
 
-            var sw = Stopwatch.StartNew();
+        for (int iteration = 0; iteration < _settings.NumberOfIterations; iteration++)
+        {
+            var executionTimeService = _serviceProvider.GetRequiredService<IExecutionTimeService>();
+            snapshots = executionTimeService.ExecutionTime(ticks);
+        }
 
-            var fileItems = _orderBookBuilder.GetOrderBookRepresentation(ticks);
-
-            sw.Stop();
-
-            _dataWriter.WriteFile("ticks_result.csv", fileItems);
-
-            ILogger.Log($"Total time [us]: {sw.ElapsedMilliseconds * 1000.0:F3}");
-            ILogger.Log($"Time per tick [us]: {sw.ElapsedMilliseconds * 1000.0 / ticks.Count:F3}");
+        if (snapshots != null)
+        {
+            _dataWriter.WriteFile(_settings.OutputFile, snapshots);
         }
     }
-
 }

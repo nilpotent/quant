@@ -1,10 +1,8 @@
-﻿
-using SkyQuant.View;
+﻿using SkyQuant.Models;
 
-namespace SkyQuant.Services
+namespace SkyQuant.Services;
+
+public interface IDataWriter
 {
-    public interface IDataWriter
-    {
-        void WriteFile(string path, IOrderBookRepresentation fileItems);
-    }
+    void WriteFile(string path, IReadOnlyList<Snapshot> snapshots);
 }

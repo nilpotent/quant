@@ -1,10 +1,8 @@
-﻿
-using SkyQuant.View;
+﻿using SkyQuant.Models;
 
-namespace SkyQuant.Services
+namespace SkyQuant.Services;
+
+public interface IOrderBookBuilder
 {
-    public interface IOrderBookBuilder
-    {
-        IOrderBookRepresentation GetOrderBookRepresentation(IReadOnlyList<string> ticks);
-    }
+    IReadOnlyList<Snapshot> GetOrderBookRepresentation(IReadOnlyList<Tick> parsed);
 }

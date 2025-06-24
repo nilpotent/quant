@@ -1,8 +1,8 @@
-﻿
-namespace SkyQuant.Services
+﻿using SkyQuant.Models;
+
+namespace SkyQuant.Services;
+
+public interface IDataReader
 {
-    public interface IDataReader
-    {
-        IReadOnlyList<string>? ReadFile(string path);
-    }
+    IReadOnlyList<Tick>? ReadFile(string path);
 }
